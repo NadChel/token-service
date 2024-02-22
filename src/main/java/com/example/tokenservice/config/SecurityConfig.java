@@ -1,6 +1,6 @@
 package com.example.tokenservice.config;
 
-import com.example.tokenservice.service.user.UserService;
+import com.example.tokenservice.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
@@ -17,10 +17,10 @@ import java.util.List;
 
 @Configuration
 public class SecurityConfig {
-    private final UserService userService;
+    private final UserRepository userRepository;
 
-    public SecurityConfig(UserService userService) {
-        this.userService = userService;
+    public SecurityConfig(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Bean
@@ -32,7 +32,7 @@ public class SecurityConfig {
 
     @Bean
     public ReactiveUserDetailsService userDetailsService() {
-        return username -> Mono.justOrEmpty(userService.findByUsername(username));
+        return username -> Mono.justOrEmpty(userRepository.findByUsername(username));
     }
 
     @Bean
