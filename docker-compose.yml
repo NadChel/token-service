@@ -1,0 +1,42 @@
+version: '2.1'
+
+services:
+  token-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8100:8100"
+    depends_on:
+      db:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    environment:
+      POSTGRES_URL: jdbc:postgresql://db:5432/postgres
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      EUREKA_URL: http://eureka:8761/eureka
+
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  eureka:
+    image: nadchel/eureka-server:1.0
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://eureka:8761"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
