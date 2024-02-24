@@ -4,12 +4,14 @@ import com.example.tokenservice.data.entity.Role;
 import com.example.tokenservice.data.entity.User;
 import com.example.tokenservice.repository.UserRepository;
 import com.example.tokenservice.service.role.RoleService;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-@Component
+@Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleService roleService;
@@ -25,6 +27,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User save(User user) {
+        if (userRepository.existsByUsername(user.getUsername()))
+            throw new DuplicateKeyException("Username already taken: " + user.getUsername());
         return userRepository.save(user);
     }
 
@@ -36,9 +40,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public User addDefaultRoles(User user) {
         Optional<Role> userRoleOptional = roleService.findByAuthority(Role.USER);
-        Role userRole = userRoleOptional.orElse(new Role(Role.USER));
+        Role userRole = userRoleOptional.orElseGet(() -> roleService.save(new Role(Role.USER)));
         userRole.addUser(user);
         user.addRole(userRole);
         return user;

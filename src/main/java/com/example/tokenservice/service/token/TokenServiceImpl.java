@@ -5,13 +5,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 
-@Component
+@Service
 public class TokenServiceImpl implements TokenService {
     @Override
     public String generateTokenFor(Authentication authentication) {
