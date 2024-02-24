@@ -12,14 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final RoleService roleService;
     private final PasswordEncoder encoder;
 
-    public UserServiceImpl(UserRepository userRepository,
-                           RoleService roleService,
-                           PasswordEncoder encoder) {
+    public BasicUserService(UserRepository userRepository,
+                            RoleService roleService,
+                            PasswordEncoder encoder) {
         this.userRepository = userRepository;
         this.roleService = roleService;
         this.encoder = encoder;

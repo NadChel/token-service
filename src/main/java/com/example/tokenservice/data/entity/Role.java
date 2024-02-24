@@ -30,15 +30,13 @@ public class Role implements GrantedAuthority {
     @Column(nullable = false, unique = true)
     private String authority;
     @ManyToMany(mappedBy = "authorities")
-    private Set<User> users;
+    private Set<User> users = ConcurrentHashMap.newKeySet();
 
     public Role(String authority) {
         this.authority = authority;
     }
 
     public void addUser(User user) {
-        if (users == null)
-            users = ConcurrentHashMap.newKeySet();
         users.add(user);
     }
 

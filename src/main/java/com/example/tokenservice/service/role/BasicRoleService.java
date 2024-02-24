@@ -7,10 +7,10 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public class RoleServiceImpl implements RoleService {
+public class BasicRoleService implements RoleService {
     private final RoleRepository roleRepository;
 
-    public RoleServiceImpl(RoleRepository roleRepository) {
+    public BasicRoleService(RoleRepository roleRepository) {
         this.roleRepository = roleRepository;
     }
 

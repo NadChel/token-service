@@ -12,7 +12,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 
 @Service
-public class TokenServiceImpl implements TokenService {
+public class JwtTokenService implements TokenService {
     @Override
     public String generateTokenFor(Authentication authentication) {
         return Jwts.builder()
