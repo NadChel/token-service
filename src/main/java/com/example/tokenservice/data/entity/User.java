@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -77,5 +78,10 @@ public class User implements UserDetails {
     @Override
     public int hashCode() {
         return Objects.hash(username);
+    }
+
+    @Override
+    public String toString() {
+        return MessageFormat.format("User[username={0}]", username);
     }
 }
