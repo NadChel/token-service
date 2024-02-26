@@ -1,6 +1,6 @@
 package com.example.tokenservice.config;
 
-import com.example.tokenservice.handler.BasicTokenHandler;
+import com.example.tokenservice.handler.TokenHandler;
 import com.example.tokenservice.util.WebFilterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,9 +14,9 @@ import org.springframework.web.server.WebFilter;
 
 @Configuration
 public class RouterConfig {
-    private final BasicTokenHandler tokenHandler;
+    private final TokenHandler tokenHandler;
 
-    public RouterConfig(BasicTokenHandler tokenHandler) {
+    public RouterConfig(TokenHandler tokenHandler) {
         this.tokenHandler = tokenHandler;
     }
 

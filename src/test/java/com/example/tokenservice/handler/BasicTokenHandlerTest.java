@@ -6,6 +6,8 @@ import com.example.tokenservice.data.entity.User;
 import com.example.tokenservice.mapper.UserMapper;
 import com.example.tokenservice.service.token.TokenService;
 import com.example.tokenservice.service.user.UserService;
+import com.example.tokenservice.testUtil.ServerResponseUtil;
+import com.example.tokenservice.testUtil.UserUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,16 +19,13 @@ import org.springframework.mock.web.reactive.function.server.MockServerRequest;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +42,7 @@ class BasicTokenHandlerTest {
     BasicTokenHandler tokenHandler;
 
     @Test
-    void signUp() {
+    void testSignUp() {
         UserDto userDto = new UserDto();
         userDto.setUsername("goofus_d");
         userDto.setPassword("12345");
@@ -54,15 +53,18 @@ class BasicTokenHandlerTest {
 
         given(userMapper.toUser(userDto)).willReturn(user);
 
-        given(userService.encodePassword(user)).willReturn(cloneAndMutate(user, u -> u.setPassword("encoded_pass")));
+        User userAfterPasswordEncoding = UserUtil.cloneAndMutate(user, u -> u.setPassword("encoded_pass"));
+        given(userService.encodePassword(user)).willReturn(userAfterPasswordEncoding);
 
-        given(userService.addDefaultRoles(user)).willReturn(cloneAndMutate(user, u -> u.addRole(new Role(Role.USER))));
+        User userWithDefaultRoles = UserUtil.cloneAndMutate(userAfterPasswordEncoding, u -> u.addRole(new Role(Role.USER)));
+        given(userService.addDefaultRoles(userAfterPasswordEncoding)).willReturn(userWithDefaultRoles);
 
         UUID assignedId = UUID.randomUUID();
-        given(userService.save(user)).willReturn(cloneAndMutate(user, u -> u.setId(assignedId)));
+        User persistedUser = UserUtil.cloneAndMutate(userWithDefaultRoles, u -> u.setId(assignedId));
+        given(userService.save(userWithDefaultRoles)).willReturn(persistedUser);
 
         String jwt = "just.imagine.its.a.JWT";
-        given(tokenService.generateTokenFor(toAuthenticatedUpat(user))).willReturn(jwt);
+        given(tokenService.generateTokenFor(toAuthenticatedUpat(persistedUser))).willReturn(jwt);
 
         MockServerRequest request = MockServerRequest.builder()
                 .method(HttpMethod.POST)
@@ -70,24 +72,8 @@ class BasicTokenHandlerTest {
                 .body(Mono.just(userDto));
 
         StepVerifier.create(tokenHandler.signUp(request))
-                .assertNext(response -> responseChecksOut(response, HttpStatus.CREATED, jwt))
+                .assertNext(response -> ServerResponseUtil.responseChecksOut(response, HttpStatus.CREATED, jwt))
                 .verifyComplete();
-    }
-
-    private User cloneAndMutate(User user, Consumer<User> mutator) {
-        User userCopy = clone(user);
-        mutator.accept(userCopy);
-        return userCopy;
-    }
-
-    private User clone(User user) {
-        User userCopy = new User();
-        userCopy.setUsername(user.getUsername());
-        userCopy.setPassword(user.getPassword());
-        userCopy.setId(user.getId());
-        userCopy.setEnabled(user.getEnabled());
-        userCopy.setAuthorities(user.getAuthorities());
-        return userCopy;
     }
 
     private UsernamePasswordAuthenticationToken toAuthenticatedUpat(User user) {
@@ -95,29 +81,20 @@ class BasicTokenHandlerTest {
                 user.getUsername(), user.getPassword(), user.getAuthorities());
     }
 
-    @SuppressWarnings({"unchecked", "DataFlowIssue", "SameParameterValue"})
-    private <T> void responseChecksOut(ServerResponse response, HttpStatus expectedStatus, T expectedBody) {
-        assertSoftly(soft -> {
-            soft.assertThat(response.statusCode()).isEqualTo(expectedStatus);
-
-            Mono<T> body = (Mono<T>) ReflectionTestUtils.getField(response, "entity");
-            StepVerifier.create(body)
-                    .expectNext(expectedBody)
-                    .verifyComplete();
-        });
-    }
-
     @Test
-    void logIn() {
+    void testLogIn() {
         UserDto userDto = new UserDto();
         userDto.setUsername("goofus_d");
         userDto.setPassword("12345");
 
-        Authentication authentication = toUnauthenticatedUpat(userDto);
-        given(authenticationManager.authenticate(authentication)).willReturn(Mono.just(authentication));
+        Authentication passedAuthentication = toUnauthenticatedUpat(userDto);
+        Authentication returnedAuthentication = UsernamePasswordAuthenticationToken.authenticated(
+                userDto, userDto.getUsername(), List.of(new Role("some_default_role")
+                ));
+        given(authenticationManager.authenticate(passedAuthentication)).willReturn(Mono.just(returnedAuthentication));
 
-        String jwt = "fake.jw.t";
-        given(tokenService.generateTokenFor(authentication)).willReturn(jwt);
+        String jwt = "json.web.token";
+        given(tokenService.generateTokenFor(returnedAuthentication)).willReturn(jwt);
 
         MockServerRequest request = MockServerRequest.builder()
                 .method(HttpMethod.POST)
@@ -125,7 +102,7 @@ class BasicTokenHandlerTest {
                 .body(Mono.just(userDto));
 
         StepVerifier.create(tokenHandler.logIn(request))
-                .assertNext(response -> responseChecksOut(response, HttpStatus.OK, jwt))
+                .assertNext(response -> ServerResponseUtil.responseChecksOut(response, HttpStatus.OK, jwt))
                 .verifyComplete();
     }
 

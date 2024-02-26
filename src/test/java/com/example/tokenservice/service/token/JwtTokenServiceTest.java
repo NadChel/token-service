@@ -32,7 +32,8 @@ class JwtTokenServiceTest {
                 .getBody();
 
         assertThat(jwtClaims.getSubject()).isEqualTo(principal);
-        assertThat(jwtClaims.get(JWT.ROLES)).extracting(List.class::cast)
+        assertThat(jwtClaims.get(JWT.ROLES))
+                .extracting(List.class::cast)
                 .asList()
                 .containsExactlyInAnyOrderElementsOf(roles.stream()
                         .map(GrantedAuthority::getAuthority)

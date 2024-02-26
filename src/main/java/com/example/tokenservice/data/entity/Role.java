@@ -52,4 +52,9 @@ public class Role implements GrantedAuthority {
     public int hashCode() {
         return Objects.hash(authority);
     }
+
+    @Override
+    public String toString() {
+        return authority;
+    }
 }

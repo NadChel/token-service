@@ -38,6 +38,7 @@ class WebFilterFactoryTest {
                 .verifyComplete();
 
         then(chain).should().filter(exchange);
+        then(chain).shouldHaveNoMoreInteractions();
         then(exchange).shouldHaveNoInteractions();
     }
 
@@ -50,6 +51,7 @@ class WebFilterFactoryTest {
                 .verifyComplete();
 
         then(chain).should().filter(exchange);
+        then(chain).shouldHaveNoMoreInteractions();
         then(exchange).shouldHaveNoInteractions();
     }
 
@@ -60,8 +62,9 @@ class WebFilterFactoryTest {
 
         given(exchange.getResponse()).willReturn(new MockServerHttpResponse());
 
+        HttpStatus status = HttpStatus.I_AM_A_TEAPOT;
         WebFilter webFilter =
-                WebFilterFactory.exceptionHandlingWebFilter(SomeException.class, HttpStatus.I_AM_A_TEAPOT);
+                WebFilterFactory.exceptionHandlingWebFilter(SomeException.class, status);
 
         StepVerifier.create(webFilter.filter(exchange, chain))
                 .verifyComplete();
@@ -73,7 +76,7 @@ class WebFilterFactoryTest {
         ServerWebExchange newExchange = captor.getValue();
         assertThat(newExchange).extracting(ServerWebExchange::getResponse)
                 .extracting(ServerHttpResponse::getStatusCode)
-                .isEqualTo(HttpStatus.I_AM_A_TEAPOT);
+                .isEqualTo(status);
 
         StepVerifier.create(((MockServerHttpResponse) exchange.getResponse()).getBodyAsString())
                 .expectNext(exceptionMessage)
@@ -88,10 +91,10 @@ class WebFilterFactoryTest {
 
         given(exchange.getResponse()).willReturn(new MockServerHttpResponse());
 
-        HttpStatus responseStatus = HttpStatus.I_AM_A_TEAPOT;
+        HttpStatus status = HttpStatus.I_AM_A_TEAPOT;
 
         WebFilter webFilter = WebFilterFactory.exceptionHandlingWebFilter(SomeException.class,
-                responseStatus, t -> MessageFormat.format(
+                status, t -> MessageFormat.format(
                         "This happened: {0}[{1}]. It was caused by: {2}[{3}]",
                         t.getClass().getSimpleName(), t.getMessage(),
                         t.getCause().getClass().getSimpleName(), t.getCause().getMessage()
@@ -107,7 +110,7 @@ class WebFilterFactoryTest {
         ServerWebExchange newExchange = captor.getValue();
         assertThat(newExchange).extracting(ServerWebExchange::getResponse)
                 .extracting(ServerHttpResponse::getStatusCode)
-                .isEqualTo(responseStatus);
+                .isEqualTo(status);
 
         StepVerifier.create(((MockServerHttpResponse) exchange.getResponse()).getBodyAsString())
                 .expectNext(MessageFormat.format(

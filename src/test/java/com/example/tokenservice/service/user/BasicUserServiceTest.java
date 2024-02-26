@@ -19,8 +19,11 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class BasicUserServiceTest {
@@ -42,7 +45,7 @@ class BasicUserServiceTest {
         user.setUsername(occupiedUsername);
 
         assertThatThrownBy(() -> userService.save(user)).isInstanceOf(DuplicateKeyException.class);
-        then(userRepository.save(user)).shouldHaveNoInteractions();
+        then(userRepository).should(never()).save(any());
     }
 
     @Test
@@ -67,7 +70,7 @@ class BasicUserServiceTest {
     }
 
     @Test
-    void encodePassword() {
+    void testEncodePassword() {
         String password = "password", username = "donald_d";
         User user = new User();
         user.setPassword(password);
@@ -83,12 +86,14 @@ class BasicUserServiceTest {
     }
 
     @Test
-    void addDefaultRoles() {
+    void testAddDefaultRoles_ifDefaultRoleAbsent_persistsOne_thenAddsToUser() {
         User user = new User();
         assumeThat(user.getAuthorities()).isNullOrEmpty();
 
         given(roleService.findByAuthority(Role.USER)).willReturn(Optional.empty());
-        given(roleService.save(new Role(Role.USER))).willAnswer(i -> {
+
+        Role defaultRole = new Role(Role.USER);
+        given(roleService.save(defaultRole)).willAnswer(i -> {
             Role persistedRole = new Role(Role.USER);
             persistedRole.setId(UUID.randomUUID());
             return persistedRole;
@@ -96,7 +101,39 @@ class BasicUserServiceTest {
 
         User userWithDefaultRoles = userService.addDefaultRoles(user);
 
+        then(roleService).should().save(defaultRole);
+
         Set<Role> userAuthorities = userWithDefaultRoles.getAuthorities();
-        assertThat(userAuthorities).anyMatch(r -> r.getAuthority().equals(Role.USER) && r.getId() != null);
+        assertThat(userAuthorities).hasSize(1);
+        Role roleInReturnedUser = userAuthorities.iterator().next();
+        assertSoftly(soft -> {
+            soft.assertThat(roleInReturnedUser.getAuthority()).isEqualTo(defaultRole.getAuthority());
+            soft.assertThat(roleInReturnedUser.getId()).isNotNull();
+            soft.assertThat(roleInReturnedUser.getUsers()).contains(user);
+        });
+    }
+
+    @Test
+    void testAddDefaultRoles_ifDefaultRoleAlreadyPersisted_addsFetchedRoleToUser() {
+        User user = new User();
+        assumeThat(user.getAuthorities()).isNullOrEmpty();
+
+        Role role = new Role(Role.USER);
+        role.setId(UUID.randomUUID());
+
+        given(roleService.findByAuthority(Role.USER)).willReturn(Optional.of(role));
+
+        User userWithDefaultRoles = userService.addDefaultRoles(user);
+
+        then(roleService).should(never()).save(any());
+
+        Set<Role> userAuthorities = userWithDefaultRoles.getAuthorities();
+        assertThat(userAuthorities).hasSize(1);
+        Role roleInReturnedUser = userAuthorities.iterator().next();
+        assertSoftly(soft -> {
+            soft.assertThat(roleInReturnedUser.getAuthority()).isEqualTo(role.getAuthority());
+            soft.assertThat(roleInReturnedUser.getId()).isEqualTo(role.getId());
+            soft.assertThat(roleInReturnedUser.getUsers()).contains(user);
+        });
     }
 }

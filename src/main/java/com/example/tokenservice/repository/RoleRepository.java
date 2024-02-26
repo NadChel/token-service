@@ -10,5 +10,6 @@ import java.util.UUID;
 public interface RoleRepository extends Repository<Role, UUID> {
     @EntityGraph(attributePaths = "users")
     Optional<Role> findByAuthority(String authority);
+
     Role save(Role role);
 }

@@ -39,11 +39,9 @@ public class User implements UserDetails {
     @JoinTable(name = "users_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> authorities;
+    private Set<Role> authorities = ConcurrentHashMap.newKeySet();
 
     public void addRole(Role role) {
-        if (authorities == null)
-            authorities = ConcurrentHashMap.newKeySet();
         authorities.add(role);
     }
 
