@@ -16,9 +16,5 @@ spring:
 
 eureka:
   client:
-    availability-zones:
+    service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
-
-logging:
-  level:
-    org.hibernate.type: TRACE

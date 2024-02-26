@@ -18,16 +18,16 @@ public class WebFilterFactory {
     private WebFilterFactory() {
     }
 
+    public static WebFilter noOpWebFilter() {
+        return (exchange, chain) -> chain.filter(exchange);
+    }
+
     public static WebFilterChainProxy noOpWebFilterChainProxy() {
         return new WebFilterChainProxy(
                 new MatcherSecurityWebFilterChain(
                         exchange -> ServerWebExchangeMatcher.MatchResult.match(),
                         List.of(noOpWebFilter())
                 ));
-    }
-
-    public static WebFilter noOpWebFilter() {
-        return (exchange, chain) -> chain.filter(exchange);
     }
 
     public static WebFilter exceptionHandlingWebFilter(Class<? extends Throwable> throwableClass,
@@ -40,12 +40,12 @@ public class WebFilterFactory {
                                                                              Function<T, String> responseBodyValueFunction) {
         return (exchange, chain) -> chain.filter(exchange)
                 .onErrorResume(throwableClass,
-                        t -> writeResponse(exchange, status, responseBodyValueFunction.apply(t)));
+                        t -> setResponse(exchange, status, responseBodyValueFunction.apply(t)));
     }
 
-    private static Mono<Void> writeResponse(ServerWebExchange exchange,
-                                            HttpStatus status,
-                                            String responseBody) {
+    private static Mono<Void> setResponse(ServerWebExchange exchange,
+                                          HttpStatus status,
+                                          String responseBody) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(status);
         DataBuffer dataBuffer = DefaultDataBufferFactory.sharedInstance

@@ -10,7 +10,9 @@ import java.util.UUID;
 public interface UserRepository extends Repository<User, UUID> {
     @EntityGraph(attributePaths = "authorities")
     User save(User user);
+
     @EntityGraph(attributePaths = "authorities")
     Optional<User> findByUsername(String username);
+
     Boolean existsByUsername(String username);
 }

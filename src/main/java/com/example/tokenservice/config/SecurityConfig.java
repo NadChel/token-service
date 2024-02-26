@@ -16,28 +16,23 @@ import reactor.core.publisher.Mono;
 
 @Configuration
 public class SecurityConfig {
-    private final UserRepository userRepository;
-
-    public SecurityConfig(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
     @Bean
     public WebFilterChainProxy noSecurityWebFilterChainProxy() {
         return WebFilterFactory.noOpWebFilterChainProxy();
     }
 
     @Bean
-    public ReactiveUserDetailsService userDetailsService() {
+    public ReactiveUserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> Mono.<UserDetails>justOrEmpty(userRepository.findByUsername(username))
                 .switchIfEmpty(Mono.error(() -> new UsernameNotFoundException("No such user: " + username)));
     }
 
     @Bean
-    public ReactiveAuthenticationManager authenticationManager() {
+    public ReactiveAuthenticationManager authenticationManager(ReactiveUserDetailsService userDetailsService,
+                                                               PasswordEncoder passwordEncoder) {
         UserDetailsRepositoryReactiveAuthenticationManager authenticationManager =
-                new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService());
-        authenticationManager.setPasswordEncoder(passwordEncoder());
+                new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
+        authenticationManager.setPasswordEncoder(passwordEncoder);
         return authenticationManager;
     }
 
