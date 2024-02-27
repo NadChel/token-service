@@ -2,6 +2,7 @@ package com.example.tokenservice.config;
 
 import com.example.tokenservice.handler.TokenHandler;
 import com.example.tokenservice.util.WebFilterFactory;
+import org.springdoc.core.annotations.RouterOperation;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
@@ -21,6 +22,7 @@ public class RouterConfig {
     }
 
     @Bean
+    @RouterOperation(beanClass = TokenHandler.class, beanMethod = "signUp")
     public RouterFunction<ServerResponse> signUpRoute() {
         return RouterFunctions.route()
                 .POST("/signup", tokenHandler::signUp)
@@ -28,6 +30,7 @@ public class RouterConfig {
     }
 
     @Bean
+    @RouterOperation(beanClass = TokenHandler.class, beanMethod = "logIn")
     public RouterFunction<ServerResponse> logInRoute() {
         return RouterFunctions.route()
                 .POST("/login", tokenHandler::logIn)
