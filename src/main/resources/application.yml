@@ -1,13 +1,16 @@
 server:
   port: 8100
 
+logging:
+  level:
+    root: ${ROOT_LOGGING_LEVEL:info}
+
 spring:
   datasource:
     username: ${POSTGRES_USERNAME:postgres}
     password: ${POSTGRES_PASSWORD:postgres}
     url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/postgres}
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: create-drop
     show-sql: true
